@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AIR BANK Academy - Interaktivní trénink zvládání námitek">
+    <meta name="author" content="AIR BANK">
+    <title>AIR BANK Academy - Námitkář 💪</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💪</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(135deg, #A4D233 0%, #8BC220 50%, #73A817 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .floating-circles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .circle:nth-child(1) { width: 300px; height: 300px; top: 10%; left: -100px; animation-delay: 0s; }
+        .circle:nth-child(2) { width: 200px; height: 200px; top: 60%; right: -50px; animation-delay: 5s; }
+        .circle:nth-child(3) { width: 150px; height: 150px; bottom: 10%; left: 20%; animation-delay: 10s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-30px) translateX(20px); }
+            50% { transform: translateY(-60px) translateX(-20px); }
+            75% { transform: translateY(-30px) translateX(10px); }
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+            max-width: 900px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #A4D233 0%, #8BC220 100%);
+            padding: 30px 40px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .logo {
+            font-family: 'Space Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tagline {
+            font-size: 16px;
+            opacity: 0.95;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 40px;
+            background: #f8f9fa;
+            border-bottom: 3px solid #e9ecef;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 900;
+            color: #A4D233;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .start-screen, .game-screen, .result-screen, .leaderboard-screen {
+            display: none;
+        }
+
+        .start-screen.active, .game-screen.active, .result-screen.active, .leaderboard-screen.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .welcome-title {
+            font-size: 36px;
+            font-weight: 900;
+            color: #212529;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .welcome-text {
+            font-size: 18px;
+            color: #6c757d;
+            text-align: center;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 18px 24px;
+            font-size: 18px;
+            border: 3px solid #e9ecef;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .name-input:focus {
+            outline: none;
+            border-color: #A4D233;
+            box-shadow: 0 0 0 4px rgba(164, 210, 51, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 20px;
+            font-size: 20px;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'DM Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #A4D233 0%, #8BC220 100%);
+            color: white;
+            box-shadow: 0 10px 30px rgba(164, 210, 51, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(164, 210, 51, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        .question-number {
+            font-size: 14px;
+            color: #A4D233;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 15px;
+        }
+
+        .scenario-box {
+            background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            border-left: 6px solid #ff9800;
+        }
+
+        .scenario-title {
+            font-size: 14px;
+            color: #f57c00;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .scenario-text {
+            font-size: 18px;
+            color: #212529;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        .client-objection {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+            border: 2px solid #ffb74d;
+            font-style: italic;
+            font-size: 20px;
+            font-weight: 700;
+            color: #e65100;
+        }
+
+        .answers-grid {
+            display: grid;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .answer-btn {
+            padding: 20px;
+            background: white;
+            border: 3px solid #e9ecef;
+            border-radius: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            font-weight: 500;
+            color: #212529;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .answer-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(135deg, #A4D233 0%, #8BC220 100%);
+            transition: width 0.3s ease;
+            z-index: 0;
+        }
+
+        .answer-btn:hover {
+            border-color: #A4D233;
+            transform: translateX(5px);
+        }
+
+        .answer-btn:hover::before {
+            width: 5px;
+        }
+
+        .answer-btn.selected {
+            border-color: #A4D233;
+            background: rgba(164, 210, 51, 0.05);
+        }
+
+        .answer-btn.correct {
+            background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+            border-color: #37b24d;
+            color: white;
+            animation: correctPulse 0.6s ease;
+        }
+
+        .answer-btn.incorrect {
+            background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
+            border-color: #fa5252;
+            color: white;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .answer-label {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            line-height: 40px;
+            font-weight: 900;
+            margin-right: 15px;
+            font-family: 'Space Mono', monospace;
+            position: relative;
+            z-index: 1;
+        }
+
+        .answer-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        .feedback-box {
+            margin-top: 25px;
+            padding: 25px;
+            border-radius: 16px;
+            display: none;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feedback-box.show {
+            display: block;
+        }
+
+        .feedback-box.correct {
+            background: linear-gradient(135deg, #d3f9d8 0%, #b2f2bb 100%);
+            border-left: 6px solid #51cf66;
+        }
+
+        .feedback-box.incorrect {
+            background: linear-gradient(135deg, #ffe3e3 0%, #ffc9c9 100%);
+            border-left: 6px solid #ff6b6b;
+        }
+
+        .feedback-title {
+            font-size: 20px;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .feedback-title.correct { color: #2f9e44; }
+        .feedback-title.incorrect { color: #e03131; }
+
+        .feedback-text {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #212529;
+        }
+
+        .next-btn {
+            margin-top: 25px;
+            background: linear-gradient(135deg, #A4D233 0%, #8BC220 100%);
+            color: white;
+            display: none;
+        }
+
+        .next-btn.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .result-title {
+            font-size: 48px;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #A4D233 0%, #8BC220 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .result-score {
+            text-align: center;
+            font-size: 72px;
+            font-weight: 900;
+            color: #A4D233;
+            margin-bottom: 30px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .result-message {
+            text-align: center;
+            font-size: 20px;
+            color: #6c757d;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .result-stat-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .result-stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .result-stat-value {
+            font-size: 32px;
+            font-weight: 900;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .result-stat-value.correct { color: #51cf66; }
+        .result-stat-value.incorrect { color: #ff6b6b; }
+        .result-stat-value.time { color: #A4D233; }
+
+        .btn-secondary {
+            background: white;
+            color: #A4D233;
+            border: 3px solid #A4D233;
+            margin-top: 15px;
+        }
+
+        .btn-secondary:hover {
+            background: #f8f9fa;
+        }
+
+        .leaderboard-title {
+            font-size: 36px;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #212529;
+        }
+
+        .leaderboard-list {
+            list-style: none;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .leaderboard-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .leaderboard-item.current-user {
+            background: linear-gradient(135deg, #d3f9d8 0%, #b2f2bb 100%);
+            border: 3px solid #51cf66;
+        }
+
+        .leaderboard-rank {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #A4D233 0%, #8BC220 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 20px;
+            margin-right: 20px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .leaderboard-item.current-user .leaderboard-rank {
+            background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+        }
+
+        .leaderboard-info {
+            flex: 1;
+        }
+
+        .leaderboard-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 3px;
+        }
+
+        .leaderboard-details {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .leaderboard-score {
+            font-size: 32px;
+            font-weight: 900;
+            color: #A4D233;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .leaderboard-item.current-user .leaderboard-score {
+            color: #51cf66;
+        }
+
+        .trophy {
+            font-size: 40px;
+            margin-bottom: 20px;
+            display: block;
+            text-align: center;
+        }
+
+        .online-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            animation: pulseBadge 2s infinite;
+        }
+
+        @keyframes pulseBadge {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px 25px;
+            }
+
+            .logo {
+                font-size: 22px;
+            }
+
+            .stats-bar {
+                padding: 15px 25px;
+            }
+
+            .content {
+                padding: 25px;
+            }
+
+            .welcome-title {
+                font-size: 28px;
+            }
+
+            .result-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-circles">
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
+    </div>
+
+    <div class="game-container">
+        <div class="header">
+            <div class="logo">💪 AIR BANK ACADEMY</div>
+            <div class="tagline">Námitkář - Mastering Objection Handling</div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="currentLevel">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Skóre</div>
+                <div class="stat-value" id="currentScore">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Čas</div>
+                <div class="stat-value" id="timer">0:00</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- START SCREEN -->
+            <div class="start-screen active">
+                <div style="text-align: center;">
+                    <span class="online-badge">💪 Trénink námitek</span>
+                </div>
+                <div class="trophy">🏆</div>
+                <h1 class="welcome-title">Vítej v Námitkáři!</h1>
+                <p class="welcome-text">
+                    Naučíš se zvládat i ty nejtěžší námitky! Čeká tě 10 reálných situací z praxe.
+                    Tvým úkolem je vybrat tu nejlepší reakci na námitku klienta.
+                    <br><br>
+                    <strong>Tvé jméno se objeví v leaderboardu! 🚀</strong>
+                </p>
+                <input type="text" class="name-input" id="playerName" placeholder="Zadej své jméno...">
+                <button class="btn btn-primary" onclick="startGame()">💪 Začít Trénink!</button>
+            </div>
+
+            <!-- GAME SCREEN -->
+            <div class="game-screen">
+                <div class="question-number" id="questionNumber">NÁMITKA 1/10</div>
+                
+                <div class="scenario-box">
+                    <div class="scenario-title">⚠️ NÁMITKA KLIENTA</div>
+                    <div class="scenario-text" id="scenarioText"></div>
+                    <div class="client-objection" id="clientObjection"></div>
+                </div>
+
+                <div class="scenario-title">💬 JAK ZAREAGUJEŠ?</div>
+                <div class="answers-grid" id="answersGrid"></div>
+
+                <div class="feedback-box" id="feedbackBox">
+                    <div class="feedback-title" id="feedbackTitle"></div>
+                    <div class="feedback-text" id="feedbackText"></div>
+                </div>
+
+                <button class="btn next-btn" id="nextBtn" onclick="nextQuestion()">
+                    Další námitka →
+                </button>
+            </div>
+
+            <!-- RESULT SCREEN -->
+            <div class="result-screen">
+                <div class="trophy" id="resultEmoji">🎉</div>
+                <h1 class="result-title">Výsledky!</h1>
+                <div class="result-score" id="finalScore">0/100</div>
+                <div class="result-message" id="resultMessage"></div>
+
+                <div class="result-stats">
+                    <div class="result-stat-box">
+                        <div class="result-stat-label">Správně</div>
+                        <div class="result-stat-value correct" id="correctCount">0</div>
+                    </div>
+                    <div class="result-stat-box">
+                        <div class="result-stat-label">Špatně</div>
+                        <div class="result-stat-value incorrect" id="incorrectCount">0</div>
+                    </div>
+                    <div class="result-stat-box">
+                        <div class="result-stat-label">Čas</div>
+                        <div class="result-stat-value time" id="finalTime">0:00</div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="showLeaderboard()">
+                    🏆 Zobrazit Leaderboard
+                </button>
+                <button class="btn btn-secondary" onclick="resetGame()">
+                    🔄 Hrát Znovu
+                </button>
+            </div>
+
+            <!-- LEADERBOARD SCREEN -->
+            <div class="leaderboard-screen">
+                <h1 class="leaderboard-title">🏆 Leaderboard - Námitkář</h1>
+                <ul class="leaderboard-list" id="leaderboardList"></ul>
+                <button class="btn btn-primary" onclick="resetGame()">
+                    🔄 Hrát Znovu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Herní data - námitky
+        const questions = [
+            {
+                scenario: "Volá ti pan Novák. Chce refinancovat hypotéku.",
+                objection: '"Nechci žádné půjčky, nejsou dobré a je lepší si nepůjčovat."',
+                answers: [
+                    { text: "Chápu, ale tohle je výhodná nabídka, určitě byste si měl půjčit.", correct: false, explanation: "Tlačíš na klienta a ignoruješ jeho obavu. Vytváříš odpor." },
+                    { text: "Je dobře, že přemýšlíte. Díky výhodné půjčce si vyřešíte věci, které nemůžete odkládat. Proto se ptáme na co si chcete půjčit, abychom zajistili, že budete schopni splácet.", correct: true, explanation: "Výborně! Oceňuješ jeho rozvahu, vysvětluješ přínos a ujišťuješ, že myslíte na jeho situaci. ✅" },
+                    { text: "No ale všichni si půjčují, to je přeci normální.", correct: false, explanation: "Bagatelizuješ jeho obavy. Nevysvětluješ benefit, jen se odvoláváš na ostatní." },
+                    { text: "Pak si nepůjčujte, to je váš problém.", correct: false, explanation: "Defensivní, neprofesionální. Hovor končí. Nikdy nereaguj takhle." }
+                ]
+            },
+            {
+                scenario: "Paní Svobodová vyplnila žádost online.",
+                objection: '"Jen jsem se díval/zkoušel si to."',
+                answers: [
+                    { text: "Aha, tak to je škoda. Zavolám jindy.", correct: false, explanation: "Vzdáváš se bez pokusu zjistit víc. Ztratils příležitost." },
+                    { text: "To je fajn, že právě u nás. Co jste tam konkrétně zkoušel? Získal jste, co jste potřeboval? A máte v plánu si brát půjčku?", correct: true, explanation: "Perfektní! Otevřené otázky zjišťující motivaci. Pokračuješ v rozhovoru přirozeně. ✅" },
+                    { text: "Tak byste si neměl jen zkoušet, to má smysl jen když to myslíte vážně.", correct: false, explanation: "Obviňuješ klienta. Působíš nepříjemně, zavíráš prostor." },
+                    { text: "Jasně, tak nashledanou.", correct: false, explanation: "Okamžitě končíš hovor. Nepokusil ses zjistit víc." }
+                ]
+            },
+            {
+                scenario: "Pan Dvořák vyplnil kalkulačku před týdnem.",
+                objection: '"Už to není aktuální / Už nepotřebuji."',
+                answers: [
+                    { text: "Tak proč jste to tenkrát vyplňoval?", correct: false, explanation: "Vyslýchací tón. Klient se cítí pod tlakem." },
+                    { text: "To znamená, že jste to už vyřešil? Jak jste to vyřešil? Co jste měl v plánu řešit? A kdy to pro Vás bude aktuální?", correct: true, explanation: "Skvělé! Zjišťuješ kontext, necháváš prostor pro budoucnost. ✅" },
+                    { text: "Dobře, tak nashledanou.", correct: false, explanation: "Okamžitě končíš bez pokusu o zjištění více." },
+                    { text: "Ale určitě to budete potřebovat, každý to potřebuje.", correct: false, explanation: "Předpokládáš bez zjištění. Působíš dotěrně." }
+                ]
+            },
+            {
+                scenario: "Paní Černá zvažuje půjčku na rekonstrukci.",
+                objection: '"Dostal jsem lepší nabídku."',
+                answers: [
+                    { text: "To není možné, naše nabídka je nejlepší.", correct: false, explanation: "Zpochybňuješ klienta. Působíš arogantně, nevíš co nabízí konkurence." },
+                    { text: "V čem je ta nabídka lepší? Jaké tam máte podmínky? Co jste porovnával? Co je pro vás u půjčky důležité?", correct: true, explanation: "Výborně! Zjišťuješ detaily, necháváš klienta mluvit. Můžeš pak ukázat výhody AB. ✅" },
+                    { text: "Tak běžte k té konkurenci.", correct: false, explanation: "Vzdáváš se okamžitě. Neprofesionální přístup." },
+                    { text: "Ale tam budete mít spoustu poplatků.", correct: false, explanation: "Předpokládáš bez zjištění. Nevíš co mu nabídli." }
+                ]
+            },
+            {
+                scenario: "Pan Hora zvažuje consolidaci úvěrů.",
+                objection: '"Jinde mi dají lepší sazbu / Sazba je vysoká."',
+                answers: [
+                    { text: "Naše sazby jsou standardní, to je normální.", correct: false, explanation: "Obhajuješ se bez vysvětlení hodnoty. Nezjišťuješ co klient srovnává." },
+                    { text: "Jaké podmínky vám konkurence nabídla? U nás se podmínky v průběhu nemění, můžete měnit splátky zdarma, splatit předčasně bez poplatků. Máte jiné závazky? Mohli bychom přibalit i ty a nabídnout nižší sazbu.", correct: true, explanation: "Perfektní! Zjišťuješ konkurenci, vysvětluješ výhody AB, nabízíš řešení (consolidaci). ✅" },
+                    { text: "To je nejlepší sazba, kterou můžeme dát.", correct: false, explanation: "Končíš vyjednávání. Nenabízíš alternativy, nezjišťuješ situaci." },
+                    { text: "Tak jděte jinam.", correct: false, explanation: "Vzdáváš se bez boje. Neprofesionální." }
+                ]
+            },
+            {
+                scenario: "Paní Králová zvažuje půjčku na studium dcery.",
+                objection: '"Nemám čas."',
+                answers: [
+                    { text: "Tak vám zavolám později. Nashledanou.", correct: false, explanation: "Nepokusíš se zjistit, kolik času má, nebo pomoci rychle." },
+                    { text: "Tomu rozumím, kdo dnes čas má. Kolik máte času? Zabere to 10 minut a hned víte, s čím u nás můžete počítat, zvládneme to?", correct: true, explanation: "Výborně! Projevuješ empatii, kvantifikuješ čas, nabízíš pomoc. ✅" },
+                    { text: "Ale to rychle zvládneme, nebojte se.", correct: false, explanation: "Nepřesné, neříkáš kolik to zabere. Nezjišťuješ jeho skutečnou situaci." },
+                    { text: "Když nemáte čas, tak asi nemáte zájem.", correct: false, explanation: "Pasivně agresivní. Vytváříš konflikt místo řešení." }
+                ]
+            },
+            {
+                scenario: "Pan Veselý přemýšlí o půjčce na auto.",
+                objection: '"Můžete zavolat později? Domluvím se s manželkou."',
+                answers: [
+                    { text: "Jasně, zavolám za týden.", correct: false, explanation: "Příliš dlouhý časový odstup bez ověření potřeb. Mohlo se mezitím změnit mnoho." },
+                    { text: "Co přesně s manželkou potřebujete probrat? A toto nastavení vám vyhovuje? Tak vám to uložím, řeknu co budete potřebovat za doklady a pak se domluvíte a stačí jen podepsat.", correct: true, explanation: "Skvělé! Zjišťuješ co potřebují projednat, usnadňuješ rozhodování, nabízíš konkrétní kroky. ✅" },
+                    { text: "Dobře, tak vám dám čas na rozmyšlenou.", correct: false, explanation: "Neurčitý závěr. Nevíš kdy se ozve, neposouváš ho dopředu." },
+                    { text: "Ale manželka určitě bude souhlasit.", correct: false, explanation: "Předpokládáš. Nevíš vztahovou dynamiku, můžeš se splést." }
+                ]
+            },
+            {
+                scenario: "Paní Malá chce pomoci synovi s bydlením.",
+                objection: '"Vezmu si to od rodičů / od známého."',
+                answers: [
+                    { text: "Ale od rodiny si brát není dobré.", correct: false, explanation: "Bagatelizuješ rodinné vztahy. Může to znít urážlivě." },
+                    { text: "Chápu, že si v rodině pomůžete. Na druhou stranu jsem tu měla klienty, kterým to půjčení doma nedopadlo dobře. Pojďme se podívat, jak by to u nás vypadalo, a vy se v klidu rozhodnete.", correct: true, explanation: "Perfektní! Respektuješ jejich volbu, nenásilně poukazuješ na rizika, necháváš rozhodnutí na nich. ✅" },
+                    { text: "To je vaše věc, ale mohlo by to pokazit vztahy.", correct: false, explanation: "Příliš přímočaré, může znít jako strašení." },
+                    { text: "Tak dobře, tak to udělejte.", correct: false, explanation: "Vzdáváš se bez pokusu nabídnout alternativu." }
+                ]
+            },
+            {
+                scenario: "Pan Bílý žádá o vyšší částku než mu vyšla.",
+                objection: '"Byla mi schválena nižší částka než jsem chtěl."',
+                answers: [
+                    { text: "To je bohužel maximum, co můžeme dát.", correct: false, explanation: "Končíš bez nabídnutí řešení nebo zjištění, co skutečně potřebuje." },
+                    { text: "Tomu rozumím. Kolik vlastně potřebujete na to nejnutnější? Můžete si vzít takhle a po nějaké době můžeme zkusit dožádat zbytek a nastavit to, aby vám to vyhovovalo.", correct: true, explanation: "Výborně! Zjišťuješ prioritu, nabízíš postupné řešení, udržuješ vztah. ✅" },
+                    { text: "Tak to je škoda, nashledanou.", correct: false, explanation: "Okamžitě končíš. Nepokusíš se najít kompromis." },
+                    { text: "Měl jste vyšší příjmy.", correct: false, explanation: "Obhajuješ se místo hledání řešení. Může to znít jako výčitka." }
+                ]
+            },
+            {
+                scenario: "Paní Nová je nervózní z výše splátky.",
+                objection: '"Bojím se půjčit / Je to moc velký závazek."',
+                answers: [
+                    { text: "Ale všichni se půjčují, není se čeho bát.", correct: false, explanation: "Bagatelizuješ obavy. Nesnižuješ nejistotu, jen odmítáš její pocity." },
+                    { text: "Co se stalo, že máte strach? Máte špatnou zkušenost? Splátku upravím podle vašeho rozpočtu. Pokud byste v průběhu zjistila, že potřebujete nižší splátku, můžete ji zdarma snížit, zvýšit nebo předčasně splatit.", correct: true, explanation: "Perfektní! Zjišťuješ příčinu strachu, vysvětluješ flexibilitu AB, snižuješ riziko. ✅" },
+                    { text: "Tak si nepůjčujte, když máte strach.", correct: false, explanation: "Vzdáváš se. Nepokoušíš se pomoci překonat obavu." },
+                    { text: "To je jen psychologická věc, zvyknete si.", correct: false, explanation: "Zlehčuješ pocity. Neadresuješ skutečnou obavu, neposkytuje řešení." }
+                ]
+            }
+        ];
+
+        // Herní stav
+        let currentQuestion = 0;
+        let score = 0;
+        let correctAnswers = 0;
+        let incorrectAnswers = 0;
+        let playerName = '';
+        let startTime = 0;
+        let timerInterval = null;
+
+        // Screens
+        const startScreen = document.querySelector('.start-screen');
+        const gameScreen = document.querySelector('.game-screen');
+        const resultScreen = document.querySelector('.result-screen');
+        const leaderboardScreen = document.querySelector('.leaderboard-screen');
+
+        function startGame() {
+            playerName = document.getElementById('playerName').value.trim();
+            if (!playerName) {
+                alert('Prosím, zadej své jméno! 😊');
+                return;
+            }
+
+            startScreen.classList.remove('active');
+            gameScreen.classList.add('active');
+            
+            currentQuestion = 0;
+            score = 0;
+            correctAnswers = 0;
+            incorrectAnswers = 0;
+            startTime = Date.now();
+            
+            startTimer();
+            loadQuestion();
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timer').textContent = 
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function loadQuestion() {
+            const question = questions[currentQuestion];
+            
+            document.getElementById('currentLevel').textContent = currentQuestion + 1;
+            document.getElementById('currentScore').textContent = score;
+            document.getElementById('questionNumber').textContent = 
+                `NÁMITKA ${currentQuestion + 1}/10`;
+            document.getElementById('scenarioText').textContent = question.scenario;
+            document.getElementById('clientObjection').textContent = question.objection;
+            
+            const answersGrid = document.getElementById('answersGrid');
+            answersGrid.innerHTML = '';
+            
+            question.answers.forEach((answer, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.innerHTML = `
+                    <span class="answer-label">${String.fromCharCode(65 + index)}</span>
+                    <span class="answer-text">${answer.text}</span>
+                `;
+                btn.onclick = () => selectAnswer(index);
+                answersGrid.appendChild(btn);
+            });
+
+            document.getElementById('feedbackBox').classList.remove('show', 'correct', 'incorrect');
+            document.getElementById('nextBtn').classList.remove('show');
+        }
+
+        function selectAnswer(answerIndex) {
+            const question = questions[currentQuestion];
+            const answer = question.answers[answerIndex];
+            const answerBtns = document.querySelectorAll('.answer-btn');
+            
+            // Disable all buttons
+            answerBtns.forEach(btn => btn.style.pointerEvents = 'none');
+            
+            // Show result
+            if (answer.correct) {
+                answerBtns[answerIndex].classList.add('correct');
+                showFeedback(true, answer.explanation);
+                score += 10;
+                correctAnswers++;
+            } else {
+                answerBtns[answerIndex].classList.add('incorrect');
+                // Highlight correct answers
+                question.answers.forEach((ans, idx) => {
+                    if (ans.correct) {
+                        answerBtns[idx].classList.add('correct');
+                    }
+                });
+                showFeedback(false, answer.explanation);
+                incorrectAnswers++;
+            }
+            
+            document.getElementById('currentScore').textContent = score;
+            document.getElementById('nextBtn').classList.add('show');
+        }
+
+        function showFeedback(isCorrect, explanation) {
+            const feedbackBox = document.getElementById('feedbackBox');
+            const feedbackTitle = document.getElementById('feedbackTitle');
+            const feedbackText = document.getElementById('feedbackText');
+            
+            feedbackBox.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+            feedbackTitle.textContent = isCorrect ? '✅ Výborně!' : '❌ Tohle ne...';
+            feedbackTitle.className = `feedback-title ${isCorrect ? 'correct' : 'incorrect'}`;
+            feedbackText.textContent = explanation;
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            
+            if (currentQuestion < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            clearInterval(timerInterval);
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            gameScreen.classList.remove('active');
+            resultScreen.classList.add('active');
+            
+            document.getElementById('finalScore').textContent = `${score}/100`;
+            document.getElementById('correctCount').textContent = correctAnswers;
+            document.getElementById('incorrectCount').textContent = incorrectAnswers;
+            document.getElementById('finalTime').textContent = timeString;
+            
+            // Messages based on performance
+            let message = '';
+            let emoji = '';
+            if (score >= 90) {
+                message = 'Mistr zvládání námitek! 💪 Jsi připravený školit ostatní!';
+                emoji = '🏆';
+            } else if (score >= 70) {
+                message = 'Skvělá práce! 🎯 Máš pevné základy, jen trochu doladit!';
+                emoji = '🎉';
+            } else if (score >= 50) {
+                message = 'Dobrý začátek! 👍 Ještě trochu procvičit a budeš na špici!';
+                emoji = '📈';
+            } else {
+                message = 'Nevzdávej to! 💡 Zkus to znovu, každý pokus tě posune dál!';
+                emoji = '🎯';
+            }
+            
+            document.getElementById('resultMessage').textContent = message;
+            document.getElementById('resultEmoji').textContent = emoji;
+            
+            // Save to leaderboard
+            saveToLeaderboard(playerName, score, elapsed);
+        }
+
+        function saveToLeaderboard(name, score, time) {
+            let leaderboard = JSON.parse(localStorage.getItem('airbank-namitkar-leaderboard') || '[]');
+            
+            leaderboard.push({
+                name: name,
+                score: score,
+                time: time,
+                timestamp: Date.now()
+            });
+            
+            // Sort by score (desc), then by time (asc)
+            leaderboard.sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return a.time - b.time;
+            });
+            
+            // Keep top 10
+            leaderboard = leaderboard.slice(0, 10);
+            
+            localStorage.setItem('airbank-namitkar-leaderboard', JSON.stringify(leaderboard));
+        }
+
+        function showLeaderboard() {
+            resultScreen.classList.remove('active');
+            leaderboardScreen.classList.add('active');
+            
+            const leaderboard = JSON.parse(localStorage.getItem('airbank-namitkar-leaderboard') || '[]');
+            const leaderboardList = document.getElementById('leaderboardList');
+            leaderboardList.innerHTML = '';
+            
+            if (leaderboard.length === 0) {
+                leaderboardList.innerHTML = '<li style="text-align: center; padding: 40px; color: #6c757d;">Zatím žádné výsledky. Buď první! 🚀</li>';
+                return;
+            }
+            
+            leaderboard.forEach((entry, index) => {
+                const minutes = Math.floor(entry.time / 60);
+                const seconds = entry.time % 60;
+                const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                const isCurrentUser = entry.name === playerName && 
+                                     Math.abs(entry.timestamp - Date.now()) < 5000;
+                
+                const li = document.createElement('li');
+                li.className = `leaderboard-item ${isCurrentUser ? 'current-user' : ''}`;
+                li.innerHTML = `
+                    <div class="leaderboard-rank">${index + 1}</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">${entry.name}</div>
+                        <div class="leaderboard-details">
+                            Čas: ${timeString} • 
+                            Správně: ${entry.score / 10}/10
+                        </div>
+                    </div>
+                    <div class="leaderboard-score">${entry.score}</div>
+                `;
+                leaderboardList.appendChild(li);
+            });
+        }
+
+        function resetGame() {
+            clearInterval(timerInterval);
+            
+            startScreen.classList.add('active');
+            gameScreen.classList.remove('active');
+            resultScreen.classList.remove('active');
+            leaderboardScreen.classList.remove('active');
+            
+            document.getElementById('timer').textContent = '0:00';
+            document.getElementById('currentLevel').textContent = '0';
+            document.getElementById('currentScore').textContent = '0';
+        }
+    </script>
+</body>
+</html>
