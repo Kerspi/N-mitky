@@ -1,0 +1,2 @@
+# N-mitky
+Trénování námitek
